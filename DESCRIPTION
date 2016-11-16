@@ -1,9 +1,12 @@
 Package: sapfluxnetQC2
 Type: Package
-Title: What the Package Does (Title Case)
-Version: 0.1.0
-Author: Who wrote it
-Maintainer: Who to complain to <yourfault@somewhere.net>
-Description: More about what it does (maybe more than one line)
+Title: Package for Level 2 QC od SAPFLUXNET data
+Version: 0.0.0.9000
+Authors@R: c(
+    person("Victor", "Granda", email = "v.granda@creaf.uab.cat", role = c("aut", "cre"))
+    )
+Description: Functions for processing and standardization of QC processed data
 License: What license is it under?
 LazyData: TRUE
+Imports:
+    sapfluxnetQC1
