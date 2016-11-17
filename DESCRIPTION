@@ -3,7 +3,8 @@ Type: Package
 Title: Package for Level 2 QC od SAPFLUXNET data
 Version: 0.0.0.9000
 Authors@R: c(
-    person("Victor", "Granda", email = "v.granda@creaf.uab.cat", role = c("aut", "cre"))
+    person("Victor", "Granda", email = "v.granda@creaf.uab.cat", role = c("aut", "cre")),
+    person("Roberto", "Molowny-Horas", email = "roberto@creaf.uab.cat", role = c("con"))
     )
 Description: Functions for processing and standardization of QC processed data
 License: What license is it under?
