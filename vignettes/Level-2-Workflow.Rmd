@@ -1,0 +1,67 @@
+---
+title: "Level 2 Workflow"
+author: "Sapfluxnet Team"
+date: "`r Sys.Date()`"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Level 2 Workflow}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+Designed workflow for level 2 stage of SAPFLUXNET Project.
+
+## General Schematics
+
+The general overview of the level 2 quality check involves **four main steps**:
+
+  1. Outliers Detection and Conversion
+  
+  1. Units transformation and standardization
+  
+  1. Ranges checks
+  
+  1. Visual checks
+
+Through this four steps a new SfnData object is created for the site incorporating
+the transformed data (outliers, ranges, units...) and the corresponding flags.
+
+![General workflow for Level 2 QC](level_2_wflow_general_schema.svg)  
+
+## Outliers Detection and Conversion
+
+Outliers detection is made in two different steps. First, a conservative screening
+is made to flag and substitute the outliers clearly identified. Second, a
+less conservative screening is made to **only** flag possible periods of *weird*
+data to address in the visual checks step.
+
+![Outliers workflow for Level 2](level_2_outliers_schema.svg)
+
+## Units transformation and standardization
+
+In this step several operations are performed:
+
+  + **Standardization of sap units** to $cm^3 h^{-1}$ (tree level)
+  
+  + **Solar time**. Original `TIMESTAMP` is maintained but also Solar Mean Time
+    converted `TIMESTAMP` is calculated and stored for later use (useful for
+    different sites analyses).
+  
+  + **Variable filling**. Some environmental variables can be calculated from
+    other(s) in case that they were not provided:
+      
+      - *Radiation*: `ppdf_in` can be calculated from `sw_in` and viceversa
+      - *vpd/rh/ta*: `vpd` is calculated from `rh` and `ta`, so in case of any
+        of them were missing in this step they will be calculated.
+
+After this operations are done, data is more completed and standardized in a way
+that allows starting to wrok in some preliminar analyses.
+
+![Units workflow for Level 2](level_2_units_schema.svg)
+
+## Range checks (only environmental)
+
+Range checks are made for environmental variables, and only for flagrant
+deviations of *natural* limits (i.e rh values above 100 or below 0). Sap flow
+ranges and Metadata variables ranges are checked visually in the next step.
+
