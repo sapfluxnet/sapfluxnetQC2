@@ -212,6 +212,10 @@ out_median <- function(y, k = 5L, parent_logger = 'test') {
 #' @param method Character vector indicating the method to use in the estimation:
 #'   \code{hampel} (default), \code{tukey} and \code{quantile}.
 #'
+#' @param reverse Logical indicating if in case of k is bigger than the data
+#'   length (i.e in the extremes of the vector) a reverse replication must be
+#'   done. Default to TRUE.
+#'
 #' @return A list with two elements:
 #'   \itemize{
 #'     \item{res: A vector of the same length as y with the ouliers value
@@ -224,7 +228,8 @@ out_median <- function(y, k = 5L, parent_logger = 'test') {
 # START
 # Function declaration
 out_hampel_filter <- function(y, k = 5L, t0 = 3L,
-                              method = 'hampel', parent_logger = 'test') {
+                              method = 'hampel', reverse = TRUE,
+                              parent_logger = 'test') {
 
   # Using calling handlers to manage errors
   withCallingHandlers({

@@ -65,3 +65,37 @@ Range checks are made for environmental variables, and only for flagrant
 deviations of *natural* limits (i.e rh values above 100 or below 0). Sap flow
 ranges and Metadata variables ranges are checked visually in the next step.
 
+![Ranges workflow for Level 2](level_2_ranges_schema.svg)
+
+## Visual checks
+
+After QC check, outliers detection, units transformations and range checks, a
+visual check of the data and metadata is needed. This visual check consist in
+several operations:
+
+  + **Visual range checks**
+  
+      - *Sap flow ranges*. As it is difficult to establish reasonable sap flow
+        limits (it depends on species, biomes...), three different limits will
+        be represented in the timeseries visualizations:
+        
+          1. vines/lianas limit (extreme value)
+          1. Gymnosperms (conifers...)
+          1. Angyosperms (broadleaf...)
+      
+      - *Metadata ranges*. Here it is also difficult establish reasonable limits,
+        so a visual check is made to detect *strange* values. In this case
+        points corresponding to the site to check are compared with the points
+        of the rest of the sites for detecting deviations worth of look with more
+        detail.
+  
+  + **Visual checks of timeseries data**  
+    In this case, the goal is to identify *weird* patterns in the data, worth of
+    feedback with the contributor. In this step information from the loose
+    outliers detection is integrated to head for *hot spots* in the data.
+
+To do this and be able to integrate it in a semiautomated way in the quality
+control process, a system for annotate TIMESTAMPS/Var combinations through a
+text file is setted up (see diagram for details).
+
+![Visual checks workflow for Level 2](level_2_visual_schema.svg)
