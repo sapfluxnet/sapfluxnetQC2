@@ -4,7 +4,7 @@
 \alias{out_hampel_filter}
 \title{Hampel filter}
 \usage{
-out_hampel_filter(y, k = 5L, t0 = 3L, method = "hampel",
+out_hampel_filter(y, k = 5L, t0 = 3L, method = "hampel", reverse = TRUE,
   parent_logger = "test")
 }
 \arguments{
@@ -13,10 +13,15 @@ out_hampel_filter(y, k = 5L, t0 = 3L, method = "hampel",
 \item{k}{window semi-value (integer) for substitution value calculation. See
 details.}
 
-\item{t0}{}
+\item{t0}{Integer value indicating the number of standard deviations for
+outlier detection threshold.}
 
 \item{method}{Character vector indicating the method to use in the estimation:
 \code{hampel} (default), \code{tukey} and \code{quantile}.}
+
+\item{reverse}{Logical indicating if in case of k is bigger than the data
+length (i.e in the extremes of the vector) a reverse replication must be
+done. Default to TRUE.}
 }
 \value{
 A list with two elements:

@@ -4,8 +4,8 @@
 \alias{out_remove}
 \title{Outliers QC}
 \usage{
-out_remove(sfn_data, k = 5L, t0 = 3L, method = "hampel",
-  parent_logger = "test")
+out_remove(sfn_data, k = 5L, t0 = 3L, method = "hampel", reverse = TRUE,
+  substitute = FALSE, parent_logger = "test")
 }
 \arguments{
 \item{sfn_data}{SfnData object with the site data and metadata}
@@ -13,10 +13,18 @@ out_remove(sfn_data, k = 5L, t0 = 3L, method = "hampel",
 \item{k}{window semi-value (integer) for substitution value calculation. See
 \code{\link{out_hampel_filter}} for details.}
 
-\item{t0}{}
+\item{t0}{Integer value indicating the number of standard deviations for
+outlier detection threshold.}
 
 \item{method}{Character vector indicating the method to use in the outlier
 estimation: \code{hampel} (default), \code{tukey} and \code{quantile}.}
+
+\item{reverse}{Logical indicating if in case of k is bigger than the data
+length (i.e in the extremes of the vector) a reverse replication must be
+done. Default to TRUE.}
+
+\item{substitute}{Logical indicating if the outlier subsitution must be made.
+Default to FALSE.}
 }
 \value{
 a SfnData object as the one provided with the oulier values

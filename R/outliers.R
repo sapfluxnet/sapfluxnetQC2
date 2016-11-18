@@ -207,7 +207,8 @@ out_median <- function(y, k = 5L, parent_logger = 'test') {
 #' @param k window semi-value (integer) for substitution value calculation. See
 #'   details.
 #'
-#' @param t0
+#' @param t0 Integer value indicating the number of standard deviations for
+#'   outlier detection threshold.
 #'
 #' @param method Character vector indicating the method to use in the estimation:
 #'   \code{hampel} (default), \code{tukey} and \code{quantile}.
@@ -248,31 +249,50 @@ out_hampel_filter <- function(y, k = 5L, t0 = 3L,
     if (!is.integer(t0)) {
       stop('T0 value provided is not an integer')
     }
+    # reverse logical
+    if (!is.logical(reverse)) {
+      stop('reverse parameter must be TRUE or FALSE')
+    }
 
     # STEP 1
     # Initialising needed objects
     n <- length(y)
-    z <- y
-    y0 <- switch(method,
-                 hampel = out_median(y, k, parent_logger),
-                 tukey = out_tukeyline(y, k, parent_logger),
-                 quantile = out_medianreg(y, k, parent_logger))
-    y0.na <- !is.na(y0)
-    y.na <- !is.na(y)
+
+    # 1.1 if reverse, expand y vector with the mirror data
+    if (reverse) {
+      z <- c(rev(y[2:(k+1)]),y,rev(y[(n-k):(n-1)]))
+      n <- length(z)
+    } else {
+      z <- y
+    }
+
+    z0 <- switch(method,
+                 hampel = out_median(z, k, parent_logger),
+                 tukey = out_tukeyline(z, k, parent_logger),
+                 quantile = out_medianreg(z, k, parent_logger))
+    z0.na <- !is.na(z0)
+    z.na <- !is.na(z)
     ind <- NULL
     L <- 1.4826
 
     # STEP 2
     # Iteration loop
     for (i in (k + 1):(n - k)) {
-      S0 <- L * median(abs(y[(i - k):(i + k)] - y0[i]), na.rm = TRUE)
-      if (y0.na[i] & y.na[i] & !is.na(S0) & abs(y[i] - y0[i]) > t0 * S0) {
-        z[i] <- y0[i]
+      S0 <- L * median(abs(z[(i - k):(i + k)] - z0[i]), na.rm = TRUE)
+      if (z0.na[i] & z.na[i] & !is.na(S0) & abs(z[i] - z0[i]) > t0 * S0) {
+        z[i] <- z0[i]
         ind <- c(ind, i)
       }
     }
 
     # STEP 3
+    # If reverse, drop the mirror data added before
+    if (reverse) {
+      z <- z[(k+1):(n-k)]
+      ind <- ind-k
+    }
+
+    # STEP 4
     # Returning the res list
     return(list(res = z, index = ind))
 
@@ -310,10 +330,18 @@ out_hampel_filter <- function(y, k = 5L, t0 = 3L,
 #' @param k window semi-value (integer) for substitution value calculation. See
 #'   \code{\link{out_hampel_filter}} for details.
 #'
-#' @param t0
+#' @param t0 Integer value indicating the number of standard deviations for
+#'   outlier detection threshold.
 #'
 #' @param method Character vector indicating the method to use in the outlier
 #'   estimation: \code{hampel} (default), \code{tukey} and \code{quantile}.
+#'
+#' @param reverse Logical indicating if in case of k is bigger than the data
+#'   length (i.e in the extremes of the vector) a reverse replication must be
+#'   done. Default to TRUE.
+#'
+#' @param substitute Logical indicating if the outlier subsitution must be made.
+#'   Default to FALSE.
 #'
 #' @return a SfnData object as the one provided with the oulier values
 #'   substituted and the flags slot updated.
@@ -323,7 +351,8 @@ out_hampel_filter <- function(y, k = 5L, t0 = 3L,
 # START
 # Function declaration
 out_remove <- function(sfn_data, k = 5L, t0 = 3L,
-                       method = 'hampel', parent_logger = 'test') {
+                       method = 'hampel', reverse = TRUE,
+                       substitute = FALSE, parent_logger = 'test') {
 
   # Using calling handlers to manage errors
   withCallingHandlers({
@@ -357,50 +386,81 @@ out_remove <- function(sfn_data, k = 5L, t0 = 3L,
     # STEP 2
     # Apply selected outlier filter
     sapf_out <- lapply(sapf_data, out_hampel_filter,
-                       k = k, t0 = t0, method = method)
+                       k = k, t0 = t0, method = method, reverse = reverse)
     env_out <- lapply(env_data, out_hampel_filter,
-                      k = k, t0 = t0, method = method)
+                      k = k, t0 = t0, method = method, reverse = reverse)
 
     # STEP 3
     # Iteration for substituting each column of data with the filtered data
 
     # 3.1 sapf
     for (i in 1:ncol(sapf_data)) {
-      # 3.1.1 substitute values
-      sapf_data[, i] <- sapf_out[[i]][[1]]
-      # 3.1.2 flags update
-      old_flag <- sapf_flags[sapf_out[[i]][[2]], i]
+      # 3.1.1 substitute values if specified
+      if (substitute) {
+        sapf_data[, i] <- sapf_out[[i]][[1]]
+        # 3.1.2 flags update
+        old_flag <- sapf_flags[sapf_out[[i]][[2]], i]
 
-      new_flag <- vapply(old_flag, function(x) {
-        if (x == '') {
-          "OUT_REPLACED"
-        } else { paste0(x, "; OUT_REPLACED") }
-      }, character(1), USE.NAMES = FALSE)
+        new_flag <- vapply(old_flag, function(x) {
+          if (x == '') {
+            "OUT_REPLACED"
+          } else { paste0(x, "; OUT_REPLACED") }
+        }, character(1), USE.NAMES = FALSE)
 
-      sapf_flags[sapf_out[[i]][[2]], i] <- new_flag
+        sapf_flags[sapf_out[[i]][[2]], i] <- new_flag
+      } else {
+        # 3.1.2 flags update
+        old_flag <- sapf_flags[sapf_out[[i]][[2]], i]
+
+        new_flag <- vapply(old_flag, function(x) {
+          if (x == '') {
+            "OUT_WARN"
+          } else { paste0(x, "; OUT_WARN") }
+        }, character(1), USE.NAMES = FALSE)
+
+        sapf_flags[sapf_out[[i]][[2]], i] <- new_flag
+      }
+
     }
 
     # 3.2 env
     for (i in 1:ncol(env_data)) {
-      # 3.2.1 substitute values
-      env_data[, i] <- env_out[[i]][[1]]
-      # 3.2.2 flags update
-      old_flag <- env_flags[env_out[[i]][[2]], i]
+      # 3.2.1 substitute values if specified
+      if (substitute) {
+        env_data[, i] <- env_out[[i]][[1]]
+        # 3.2.2 flags update
+        old_flag <- env_flags[env_out[[i]][[2]], i]
 
-      new_flag <- vapply(old_flag, function(x) {
-        if (x == '') {
-          "OUT_REPLACED"
-        } else { paste0(x, "; OUT_REPLACED") }
-      }, character(1), USE.NAMES = FALSE)
+        new_flag <- vapply(old_flag, function(x) {
+          if (x == '') {
+            "OUT_REPLACED"
+          } else { paste0(x, "; OUT_REPLACED") }
+        }, character(1), USE.NAMES = FALSE)
 
-      env_flags[env_out[[i]][[2]], i] <- new_flag
+        env_flags[env_out[[i]][[2]], i] <- new_flag
+      } else {
+        # 3.2.2 flags update
+        old_flag <- env_flags[env_out[[i]][[2]], i]
+
+        new_flag <- vapply(old_flag, function(x) {
+          if (x == '') {
+            "OUT_WARN"
+          } else { paste0(x, "; OUT_WARN") }
+        }, character(1), USE.NAMES = FALSE)
+
+        env_flags[env_out[[i]][[2]], i] <- new_flag
+      }
+
     }
 
     # STEP 4
     # Update sfn_data and return it!!
-    get_sapf(sfn_data) <- sapf_data
+    if (substitute) {
+      get_sapf(sfn_data) <- sapf_data
+      get_env(sfn_data) <- env_data
+    }
+
     get_sapf_flags(sfn_data) <- sapf_flags
-    get_env(sfn_data) <- env_data
     get_env_flags(sfn_data) <- env_flags
 
     return(sfn_data)
